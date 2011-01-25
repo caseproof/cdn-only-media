@@ -326,23 +326,28 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         $bucket = $w3tcconfig->get_string('cdn.'.$engine.'.bucket');
         $uri = $this->_get_s3_uri( $file );
 
-        $s3File = $this->s3Obj->getObject( $bucket, $uri );
+        $s3File = @$this->s3Obj->getObject( $bucket, $uri );
 
         return ($s3File !== false);
       }
     }
   
-    return file_exists($file);
+    // File doesn't exist in S3
+    return false;
   }
 
   function is_file($file)
   {
-    return true; // Not sure how to do this with S3
+    return $this->exists($file);
   }
 
   function is_dir($path)
   {
-    return true; // Not sure how to do this with S3
+    // S3 doesn't really recognize directories but will auto
+    // create them -- so if the path isn't a file then we'll
+    // say it could be a directory -- if it doesn't exist then
+    // when a file is uploaded to it -- it will.
+    return !$this->is_file($path);
   }
 
   function is_readable($file)
@@ -353,31 +358,69 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
 
   function is_writable($file)
   {
-    return true;
+    // We'll assume that any file is writable by
+    // the owner of the current bucket setup in W3TC
+    return $this->is_file($file);
   }
 
   function atime($file)
   {
-    return time();
+    if($this->exists($file))
+    {
+      $info = $this->_get_info($file);
+      if($info and is_array($info))
+        return $info['time'];
+      else
+        return time();
+    }
+
+    return false;
   }
 
   function mtime($file)
   {
-    return time();
+    if($this->exists($file))
+    {
+      $info = $this->_get_info($file);
+      if($info and is_array($info))
+        return $info['time'];
+      else
+        return time();
+    }
+
+    return false;
   }
 
   function size($file)
   {
-    $contents = $this->get_contents($file);
+    if($this->exists($file))
+    {
+      $info = $this->_get_info($file);
+      if($info and is_array($info))
+        return $info['size'];
+      else
+        return 0;
+    }
 
-    return strlen($contents);
+    return false;
   }
 
+  /** I don't think we can update the timestamp without reuploading */
   function touch($file, $time = 0, $atime = 0)
   {
     return true;
   }
 
+  /** This only returns true because by the default in the S3 class the directories
+    * are automatically created for a file given a path. For instance, if
+    * I do a put_contents on a file path of 'cool-folder/wordup/g/dontmess.txt'
+    * and assuming that none of the directories in this path exists then
+    * S3 will create a 'cool-folder', 'wordup' and 'g' folder automatically.
+    * Therefore -- to stay backwards compatible with a standard filesystem
+    * we just return true here to indicate that the directory exists (even
+    * if it does not) because as soon as a file is placed in the non-existent
+    * folder then it will be created.
+    */
   function mkdir($path, $chmod = false, $chown = false, $chgrp = false)
   {
     return true;
@@ -622,6 +665,26 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
       return 644;
     else // S3::ACL_PUBLIC_READ_WRITE
       return 666;
+  }
+
+  /** Get Info from Amazon about file */
+  function _get_info($remote_file)
+  {
+    if($w3tcconfig = $this->_get_w3_config())
+    {
+      $engine = $w3tcconfig->get_string('cdn.engine');
+  
+      if($engine == 's3' or $engine == 'cf')
+      {
+        $bucket = $w3tcconfig->get_string("cdn.{$engine}.bucket");
+
+        if( is_object($this->s3Obj) )
+           return $this->s3Obj->getObjectInfo($bucket, $remote_file);
+      }
+
+    }
+
+    return false;
   }
 }
 ?>
