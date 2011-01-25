@@ -84,7 +84,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         $uri = $this->_get_s3_uri($file);
   
         if( is_object($this->s3Obj) )
-          return $s3Obj->getObject( $bucket, $uri );
+          return $this->s3Obj->getObject( $bucket, $uri );
       }
     }
   
@@ -113,7 +113,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         if(is_object($this->s3Obj))
         {
           $tmp_file = $this->cwd() . '/' . uniqid( 'S3_file_' );
-          if($s3Obj->getObject( $bucket, $uri, $tmp_file ))
+          if($this->s3Obj->getObject( $bucket, $uri, $tmp_file ))
           {
             if( file_exists($tmp_file) )
             {
@@ -151,7 +151,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
   
         if( is_object($this->s3Obj) )
         {
-	  $s3Obj->putObject( $contents, $bucket, $uri, $this->_get_s3_perms( $mode ), array(), $this->_get_mime_type($file) );
+	  $result = $this->s3Obj->putObject( $contents, $bucket, $uri, $this->_get_s3_perms( $mode ), array(), $this->_get_mime_type($file) );
           
           // We are deleting any reference of the file -- remember this is CDN ONLY
           if(file_exists( $file ))
@@ -160,7 +160,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
       }
     }
   
-    return false;
+    return $result;
   }
 
   /**
@@ -275,7 +275,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         $dest_uri = $this->_get_s3_uri($destination);
   
         if( is_object($this->s3Obj) )
-	  $s3Obj->copyObject( $bucket, $src_uri, $bucket, $dest_uri, $this->_get_s3_perms($this->getchmod($src_uri)), array(), array( "Content-Type" => $this->_get_mime_type($dest_uri) ) );
+	  $this->s3Obj->copyObject( $bucket, $src_uri, $bucket, $dest_uri, $this->_get_s3_perms($this->getchmod($src_uri)), array(), array( "Content-Type" => $this->_get_mime_type($dest_uri) ) );
       }
     }
   }
@@ -308,7 +308,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         $bucket = $w3tcconfig->get_string('cdn.'.$engine.'.bucket');
         $uri = $this->_get_s3_uri($file);
   
-        return $s3Obj->deleteObject( $bucket, $uri );
+        return $this->s3Obj->deleteObject( $bucket, $uri );
       }
     }
   
@@ -326,7 +326,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         $bucket = $w3tcconfig->get_string('cdn.'.$engine.'.bucket');
         $uri = $this->_get_s3_uri( $file );
 
-        $s3File = $s3Obj->getObject( $bucket, $uri );
+        $s3File = $this->s3Obj->getObject( $bucket, $uri );
 
         return ($s3File !== false);
       }
@@ -426,7 +426,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
         if(is_object($this->s3Obj))
         {
           $tmp_file = $this->cwd() . '/' . basename($file);
-          $s3File = $s3Obj->getObject( $bucket, $uri, $tmp_file );
+          $s3File = $this->s3Obj->getObject( $bucket, $uri, $tmp_file );
 
           return $s3File;
         }
