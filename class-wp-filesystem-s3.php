@@ -603,7 +603,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
   {
     if($mode and !($mode % 100))
       $amazon_perms = S3::ACL_PRIVATE;
-    else if($mode and !($mode % 10));
+    else if($mode and !($mode % 10))
       $amazon_perms = S3::ACL_PUBLIC_READ;
     else if($mode and ($mode % 10))
       $amazon_perms = S3::ACL_PUBLIC_READ_WRITE;
