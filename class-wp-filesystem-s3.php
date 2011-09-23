@@ -407,7 +407,7 @@ class WP_Filesystem_S3 extends WP_Filesystem_Base
     */
   function _get_w3_config()
   {
-    $w3tcconfig = & W3_Config::instance();
+    $w3tcconfig = & w3_instance('W3_Config');
     return $w3tcconfig;
   }
   
