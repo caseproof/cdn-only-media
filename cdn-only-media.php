@@ -126,7 +126,7 @@ class CDNOnlyMedia
     */
   function get_w3_config()
   {
-    $w3tcconfig = & W3_Config::instance();
+    $w3tcconfig = & w3_instance('W3_Config');
     return $w3tcconfig;
   }
 
